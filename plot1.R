@@ -1,31 +1,26 @@
-plot1<- function(){
-        ## Aim of this function is to 
-        ## 1. read the household_power_consumption.txt file
-        ## 2. subset for data taken from 2 days: 2007-02-01 and 2007-02-02
-        ## 3. generate a histogram of global active power(kilowatts)
-        
-        ## Parameters: none
-        ## Assumes household_power_consumption.txt file located in working dir
-        
-        ## read data
-        powerdata <- read.table("./household_power_consumption.txt", stringsAsFactors = FALSE, header = TRUE, sep =";"  )
-        
-        ## change class of all columns to correct class
-        powerdata$Date <- as.Date(powerdata$Date, format="%d/%m/%Y")
-        powerdata$Time <- format(powerdata$Time, format="%H:%M:%S")
-        powerdata$Global_active_power <- as.numeric(powerdata$Global_active_power)
-        powerdata$Global_reactive_power <- as.numeric(powerdata$Global_reactive_power)
-        powerdata$Voltage <- as.numeric(powerdata$Voltage)
-        powerdata$Global_intensity <- as.numeric(powerdata$Global_intensity)
-        powerdata$Sub_metering_1 <- as.numeric(powerdata$Sub_metering_1)
-        powerdata$Sub_metering_2 <- as.numeric(powerdata$Sub_metering_2)
-        powerdata$Sub_metering_3 <- as.numeric(powerdata$Sub_metering_3)
-        
-        ## subset data from 2007-02-01 and 2007-02-02
-        subsetdata <- subset(powerdata, Date == "2007-02-01" | Date =="2007-02-02")
-        
-        ## plot histogram of global active power for those 2 days
-        png("plot1.png", width=480, height=480)
-        hist(subsetdata$Global_active_power, col="red", border="black", main ="Global Active Power", xlab="Global Active Power (kilowatts)", ylab="Frequency")
-        dev.off()
+# plot1.R
+library(magrittr)
+# get_data
+get_data <- function(dest_file, ex_dir) {
+  data_url <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip"
+  download.file(data_url, destfile = dest_file) # 下載壓縮檔
+  unzip(dest_file, exdir = ex_dir) # 解壓縮
+  txt_path <- paste0(ex_dir, "/household_power_consumption.txt")
+  df_header <- txt_path %>%
+    readLines(n = 1) %>%
+    strsplit(split = ";") %>%
+    unlist() # 取得變數名稱
+  df <- read.table(txt_path, sep = ";", na.strings = "?", skip = 66637, nrows = 2880, stringsAsFactors = FALSE, col.names = df_header) # 讀入資料
+  df$Date <- as.Date(df$Date, format = "%d/%m/%Y") # 轉換為日期型別
+  df$DateTime <- paste(df$Date, df$Time) %>%
+    as.POSIXct() # 轉換為日期時間型別
+  return(df)
 }
+plot1 <- function(df) {
+  png(filename = "~/ExData_Plotting1/plot1.png")
+  par(bg = NA)
+  hist(df$Global_active_power, col = "red", main = "Global Active Power", xlab = "Global Active Power (kilowatts)", bg = "transparent")
+  dev.off()
+}
+household_power_consumption <- get_data(dest_file = "~/Downloads/household_power_consumption.zip", ex_dir = "~/ExData_Plotting1")
+plot1(household_power_consumption)
